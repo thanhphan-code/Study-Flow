@@ -351,6 +351,41 @@ export function AdminPage() {
                 </div>
               )}
             </div>
+            <div className="admin-mobile-users">
+              {users?.items.map((user) => (
+                <article key={user.id}>
+                  <button
+                    className="admin-mobile-person"
+                    onClick={() => void refreshSelected(user.id)}
+                    aria-label={`Quản lý ${user.displayName}`}
+                  >
+                    <span>{user.displayName.slice(0, 2).toUpperCase()}</span>
+                    <div>
+                      <strong>{user.displayName}</strong>
+                      <small>{user.email}</small>
+                    </div>
+                  </button>
+                  <div className="admin-mobile-meta">
+                    <Status user={user} />
+                    <span className={`admin-role ${user.role.toLowerCase()}`}>
+                      {user.role}
+                    </span>
+                  </div>
+                  <p>{date(user.lastActiveAt)}</p>
+                  <button
+                    className="admin-mobile-manage"
+                    onClick={() => void refreshSelected(user.id)}
+                  >
+                    Quản lý tài khoản
+                  </button>
+                </article>
+              ))}
+              {!loading && users?.items.length === 0 && (
+                <div className="admin-empty">
+                  Không tìm thấy người dùng phù hợp.
+                </div>
+              )}
+            </div>
             <Pagination
               page={users?.page ?? page}
               total={users?.totalPages ?? 1}

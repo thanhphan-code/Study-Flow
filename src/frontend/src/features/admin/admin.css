@@ -311,6 +311,73 @@
   overflow-x: auto;
   min-height: 14rem;
 }
+.admin-mobile-users {
+  display: none;
+}
+.admin-mobile-users article {
+  border-bottom: 1px solid #e4e8ee;
+  padding: 1rem;
+}
+.admin-mobile-person {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.75rem;
+  border: 0;
+  padding: 0;
+  text-align: left;
+  background: transparent;
+}
+.admin-mobile-person > span {
+  display: grid;
+  width: 2.65rem;
+  height: 2.65rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 0.7rem;
+  color: #365472;
+  background: #e6edf4;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+.admin-mobile-person div {
+  display: grid;
+  min-width: 0;
+  gap: 0.18rem;
+}
+.admin-mobile-person strong {
+  color: #263149;
+  font-size: 0.84rem;
+}
+.admin-mobile-person small {
+  overflow: hidden;
+  color: #818b9b;
+  font-size: 0.7rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.admin-mobile-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+}
+.admin-mobile-users article > p {
+  margin: 0.65rem 0;
+  color: #7d8797;
+  font-size: 0.68rem;
+}
+.admin-mobile-manage {
+  width: 100%;
+  min-height: 2.55rem;
+  border: 1px solid #ccd5e2;
+  border-radius: 0.55rem;
+  color: #314b70;
+  background: #edf2f8;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
 .admin-table {
   width: 100%;
   min-width: 56rem;
@@ -562,7 +629,11 @@
   color: #6b7687;
   font-size: 0.72rem;
 }
-.admin-integrity > a:hover { border-color: #aebbd0; color: #334d72; background: white; }
+.admin-integrity > a:hover {
+  border-color: #aebbd0;
+  color: #334d72;
+  background: white;
+}
 .admin-integrity svg {
   width: 1rem;
 }
@@ -856,7 +927,18 @@
   .admin-drawer-metrics {
     grid-template-columns: repeat(2, 1fr);
   }
-  .admin-drawer { flex: 0 0 100%; width: 100%; }
+  .admin-drawer {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    max-width: none;
+  }
+  .admin-table-wrap {
+    display: none;
+  }
+  .admin-mobile-users {
+    display: grid;
+  }
   .admin-role-control {
     align-items: stretch;
     flex-direction: column;

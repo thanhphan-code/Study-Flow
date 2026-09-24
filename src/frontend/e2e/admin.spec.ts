@@ -105,9 +105,19 @@ test("admin control center is usable at 320px and opens user controls", async ({
       .getByRole("region", { name: "Tổng quan người dùng" })
       .getByText("Đang hoạt động"),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Quản lý" }).click();
+  const manageButton = page.getByRole("button", {
+    name: "Quản lý tài khoản",
+    exact: true,
+  });
+  await expect(manageButton).toBeVisible();
+  await manageButton.click();
   await expect(page.getByRole("heading", { name: "Minh Anh" })).toBeVisible();
   await expect(page.getByText("Thu hồi tất cả phiên đăng nhập")).toBeVisible();
+  expect(
+    await page
+      .locator(".admin-drawer")
+      .evaluate((element) => element.getBoundingClientRect().width),
+  ).toBe(320);
   await page.screenshot({
     path: testInfo.outputPath("admin-mobile.png"),
     fullPage: true,
