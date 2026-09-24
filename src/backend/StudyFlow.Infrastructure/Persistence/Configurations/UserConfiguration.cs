@@ -19,6 +19,10 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(x => x.AvatarUrl).HasMaxLength(2048);
         builder.Property(x => x.RefreshTokenHash).HasMaxLength(64);
         builder.Property(x => x.EmailVerificationCodeHash).HasMaxLength(64);
+        builder.Property(x => x.Role).HasConversion<string>().HasMaxLength(20).IsRequired();
+        builder.Property(x => x.SuspensionReason).HasMaxLength(500);
+        builder.HasIndex(x => x.LastActiveAt);
+        builder.HasIndex(x => new { x.Role, x.IsSuspended });
         builder.Property(x => x.CreatedAt).IsRequired();
         builder.Property(x => x.UpdatedAt).IsRequired();
     }

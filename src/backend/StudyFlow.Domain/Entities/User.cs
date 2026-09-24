@@ -1,4 +1,5 @@
 using StudyFlow.Domain.Common;
+using StudyFlow.Domain.Enums;
 
 namespace StudyFlow.Domain.Entities;
 
@@ -30,6 +31,12 @@ public sealed class User : BaseEntity
     public DateTimeOffset? EmailVerificationExpiresAt { get; private set; }
     public DateTimeOffset? EmailVerificationLastSentAt { get; private set; }
     public int EmailVerificationFailedAttempts { get; private set; }
+    public UserRole Role { get; private set; } = UserRole.User;
+    public bool IsSuspended { get; private set; }
+    public string? SuspensionReason { get; private set; }
+    public DateTimeOffset? SuspendedAt { get; private set; }
+    public DateTimeOffset? LastActiveAt { get; private set; }
+    public int SessionVersion { get; private set; }
 
     public static User Create(string email, string displayName) => new(email.Trim().ToLowerInvariant(), displayName.Trim());
 
@@ -69,5 +76,50 @@ public sealed class User : BaseEntity
         RefreshTokenHash = null;
         RefreshTokenExpiresAt = null;
         UpdatedAt = DateTimeOffset.UtcNow;
+    }
+
+    public void MarkActive(DateTimeOffset now)
+    {
+        LastActiveAt = now;
+    }
+
+    public void Suspend(string reason, DateTimeOffset now)
+    {
+        IsSuspended = true;
+        SuspensionReason = reason.Trim();
+        SuspendedAt = now;
+        RevokeAllSessions(now);
+    }
+
+    public void Activate(DateTimeOffset now)
+    {
+        IsSuspended = false;
+        SuspensionReason = null;
+        SuspendedAt = null;
+        SessionVersion++;
+        UpdatedAt = now;
+    }
+
+    public void SetModerationSuspension(bool suspended, string reason, DateTimeOffset now)
+    {
+        IsSuspended = suspended;
+        SuspensionReason = suspended ? reason.Trim() : null;
+        SuspendedAt = suspended ? now : null;
+        UpdatedAt = now;
+    }
+
+    public void ChangeRole(UserRole role, DateTimeOffset now)
+    {
+        if (Role == role) return;
+        Role = role;
+        RevokeAllSessions(now);
+    }
+
+    public void RevokeAllSessions(DateTimeOffset now)
+    {
+        RefreshTokenHash = null;
+        RefreshTokenExpiresAt = null;
+        SessionVersion++;
+        UpdatedAt = now;
     }
 }

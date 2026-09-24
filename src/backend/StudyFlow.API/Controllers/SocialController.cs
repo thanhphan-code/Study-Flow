@@ -42,7 +42,7 @@ public sealed class SocialController(ISocialService social, IConfiguration confi
     [HttpPost("conversations/{id:guid}/messages")] public Task<IActionResult> Send(Guid id, MessageRequest request, CancellationToken ct) => Write(() => social.SendAsync(Me, id, request, ct), ct);
     [HttpPost("conversations/{id:guid}/read")] public Task<IActionResult> ReadConversation(Guid id, CancellationToken ct) => Write(() => social.ReadConversationAsync(Me, id, ct), ct);
     [HttpPost("reports")] public Task<IActionResult> Report(ReportRequest request, CancellationToken ct) => Write(() => social.ReportAsync(Me, request, ct), ct);
-    private void Admin() { if (!(configuration.GetSection("Social:AdminUserIds").Get<string[]>() ?? []).Contains(Me.ToString(), StringComparer.OrdinalIgnoreCase)) throw new SocialException(403, "Chỉ quản trị viên có quyền thực hiện."); }
+    private void Admin() { if (User.IsInRole("Admin")) return; if (!(configuration.GetSection("Social:AdminUserIds").Get<string[]>() ?? []).Contains(Me.ToString(), StringComparer.OrdinalIgnoreCase)) throw new SocialException(403, "Chỉ quản trị viên có quyền thực hiện."); }
     [HttpGet("moderation/reports")] public Task<IActionResult> Reports(CancellationToken ct, int page = 1) { Admin(); return Read(social.ReportsAsync(page, ct)); }
     [HttpPost("moderation/reports/{id:guid}")] public Task<IActionResult> Moderate(Guid id, ModerationRequest request, CancellationToken ct) { Admin(); return Write(() => social.ModerateAsync(id, request.Action, ct), ct); }
 }

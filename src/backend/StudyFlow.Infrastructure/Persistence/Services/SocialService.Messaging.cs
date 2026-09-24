@@ -137,6 +137,11 @@ internal sealed partial class SocialService
         {
             Require(report.TargetType == "User", "Chỉ áp dụng cho tài khoản."); var profile = await MyProfile(report.TargetId, ct); profile.IsSuspended = action == "Suspend";
         }
+        if (action is "Suspend" or "Restore")
+        {
+            var account = await db.Users.SingleOrDefaultAsync(x => x.Id == report.TargetId, ct) ?? throw Missing();
+            account.SetModerationSuspension(action == "Suspend", $"Moderation report {report.Id}", Now);
+        }
         if (action == "Remove")
         {
             Require(report.TargetType is "StudySet" or "Comment", "Chỉ áp dụng cho bộ học hoặc bình luận.");

@@ -7,7 +7,9 @@ import {
   ChartNoAxesColumnIncreasing,
   Compass,
   House,
+  ShieldCheck,
 } from "lucide-react";
+import { useAuthStore } from "@/features/auth/store/authStore";
 const SocialHeader = lazy(() =>
   import("@/features/social/SocialHeader").then((m) => ({
     default: m.SocialHeader,
@@ -48,6 +50,7 @@ export function LanguageSwitch() {
 
 export function AppShell({ children }: PropsWithChildren) {
   const { t, language } = useLanguage();
+  const user = useAuthStore((state) => state.user);
   const location = useLocation();
   const focused =
     location.pathname.startsWith("/battles/") ||
@@ -109,6 +112,16 @@ export function AppShell({ children }: PropsWithChildren) {
           </NavLink>
           {navigation("desktop-nav")}
           <div className="app-account-tools">
+            {user?.role === "Admin" && (
+              <NavLink
+                className="admin-entry"
+                to="/admin"
+                aria-label="Mở bảng quản trị"
+              >
+                <ShieldCheck size={17} aria-hidden />
+                <span>Admin</span>
+              </NavLink>
+            )}
             <Suspense fallback={<span style={{ width: 120, height: 40 }} />}>
               <SocialHeader />
             </Suspense>

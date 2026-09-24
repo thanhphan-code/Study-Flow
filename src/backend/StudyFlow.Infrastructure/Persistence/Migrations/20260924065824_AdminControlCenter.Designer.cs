@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using StudyFlow.Infrastructure.Persistence;
@@ -11,9 +12,11 @@ using StudyFlow.Infrastructure.Persistence;
 namespace StudyFlow.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(StudyFlowDbContext))]
-    partial class StudyFlowDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260924065824_AdminControlCenter")]
+    partial class AdminControlCenter
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

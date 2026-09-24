@@ -109,6 +109,9 @@ input, textarea, select {
 .brand-mark span { color: var(--blue); }
 .desktop-nav { display: none; }
 .app-account-tools { display: flex; gap: .75rem; align-items: center; justify-self: end; }
+.admin-entry { display: inline-flex; min-height: 2.35rem; align-items: center; gap: .4rem; border: 1px solid #cfd8e8; border-radius: .7rem; padding: .45rem .65rem; color: #334e78; background: #edf2f8; font-size: .72rem; font-weight: 800; }
+.admin-entry:hover { color: white; background: #293b57; }
+@media (max-width: 520px) { .admin-entry span { display: none; } }
 .language-switch { display: flex; gap: .2rem; padding: .2rem; border: 1px solid #d9e0ef; border-radius: .75rem; background: rgba(255,255,255,.82); }
 .language-switch button { min-width: 2.2rem; border: 0; border-radius: .55rem; padding: .38rem .5rem; color: #78839f; background: transparent; font-size: .72rem; font-weight: 800; }
 .language-switch button.active { color: white; background: var(--blue); box-shadow: 0 5px 14px rgba(53,100,223,.23); }

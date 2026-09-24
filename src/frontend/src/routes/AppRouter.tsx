@@ -4,6 +4,7 @@ import { HomePage } from "@/pages/HomePage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 import { AuthPage } from "@/features/auth/pages/AuthPage";
 import { ProtectedRoute } from "@/features/auth/components/ProtectedRoute";
+import { AdminRoute } from "@/features/admin/AdminRoute";
 import { SubjectsPage } from "@/features/subjects/pages/SubjectsPage";
 import { SubjectDetailPage } from "@/features/subjects/pages/SubjectDetailPage";
 import { StudySetDetailPage } from "@/features/studySets/pages/StudySetDetailPage";
@@ -67,10 +68,29 @@ const ModerationPage = lazy(() =>
     default: m.ModerationPage,
   })),
 );
+const AdminPage = lazy(() =>
+  import("@/features/admin/AdminPage").then((m) => ({ default: m.AdminPage })),
+);
 
 export function AppRouter() {
   return (
     <Routes>
+      <Route
+        path="/admin"
+        element={
+          <AdminRoute>
+            <Suspense
+              fallback={
+                <p role="status" className="p-8">
+                  Đang tải bảng quản trị…
+                </p>
+              }
+            >
+              <AdminPage />
+            </Suspense>
+          </AdminRoute>
+        }
+      />
       <Route
         path="/community/moderation"
         element={

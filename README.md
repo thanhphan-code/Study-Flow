@@ -91,3 +91,5 @@ The frontend uses a mobile-first StudyFlow visual system with an ambient blue su
 Profiles, private-by-default publication, discovery, friendships, comments, independent remixes, friend-only messaging, and Battle invitations are available. See [Social Network guide](docs/SOCIAL_NETWORK.md) for usage, privacy rules, moderation configuration, architecture, and verification commands.
 
 Email ownership is verified with a six-digit OTP before new accounts can sign in. Configure the Gmail SMTP sender using [the Email OTP guide](docs/EMAIL_OTP.md).
+
+The role-protected admin control center manages account access, live activity, session revocation and audit history. Configure the first administrator using [the Admin Control guide](docs/ADMIN_CONTROL.md).

@@ -8,5 +8,5 @@ public sealed record ResendEmailOtpRequest(string Email);
 public sealed record LoginRequest(string Email, string Password);
 public sealed record RefreshTokenRequest(string RefreshToken);
 public sealed record UpdateTimeZoneRequest(string TimeZoneId);
-public sealed record UserDto(Guid Id, string Email, string DisplayName, string? AvatarUrl, string TimeZoneId, bool IsEmailVerified);
+public sealed record UserDto(Guid Id, string Email, string DisplayName, string? AvatarUrl, string TimeZoneId, bool IsEmailVerified, string Role, bool IsSuspended);
 public sealed record AuthResponse(UserDto User, string AccessToken, string RefreshToken, DateTimeOffset AccessTokenExpiresAt);

@@ -12,7 +12,7 @@ using StudyFlow.Infrastructure.Persistence;
 namespace StudyFlow.Infrastructure.Authentication;
 
 internal sealed class AuthService(StudyFlowDbContext dbContext, IPasswordHasher<User> passwordHasher, TokenService tokenService,
-    TimeProvider timeProvider, IEmailVerificationSender emailSender, IOptions<EmailOptions> emailOptions) : IAuthService
+    TimeProvider timeProvider, IEmailVerificationSender emailSender, IOptions<EmailOptions> emailOptions, IOptions<AdminOptions> adminOptions) : IAuthService
 {
     private const int OtpLifetimeMinutes = 10;
     private const int ResendCooldownSeconds = 60;
@@ -141,7 +141,8 @@ internal sealed class AuthService(StudyFlowDbContext dbContext, IPasswordHasher<
 
     private async Task<Result<AuthResponse>> IssueTokensAsync(User user, CancellationToken cancellationToken)
     {
-        if (await dbContext.UserProfiles.AnyAsync(x => x.UserId == user.Id && x.IsSuspended, cancellationToken))
+        if (adminOptions.Value.IsBootstrapAdmin(user.Email)) user.ChangeRole(StudyFlow.Domain.Enums.UserRole.Admin, timeProvider.GetUtcNow());
+        if (user.IsSuspended || await dbContext.UserProfiles.AnyAsync(x => x.UserId == user.Id && x.IsSuspended, cancellationToken))
         {
             user.RevokeRefreshToken();
             await dbContext.SaveChangesAsync(cancellationToken);
@@ -154,5 +155,5 @@ internal sealed class AuthService(StudyFlowDbContext dbContext, IPasswordHasher<
         return Result<AuthResponse>.Success(new AuthResponse(ToDto(user), access.Token, refresh.Token, access.ExpiresAt));
     }
 
-    private static UserDto ToDto(User user) => new(user.Id, user.Email, user.DisplayName, user.AvatarUrl, user.TimeZoneId, user.IsEmailVerified);
+    private static UserDto ToDto(User user) => new(user.Id, user.Email, user.DisplayName, user.AvatarUrl, user.TimeZoneId, user.IsEmailVerified, user.Role.ToString(), user.IsSuspended);
 }

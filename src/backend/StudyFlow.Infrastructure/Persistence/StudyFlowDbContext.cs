@@ -5,6 +5,7 @@ namespace StudyFlow.Infrastructure.Persistence;
 
 public sealed class StudyFlowDbContext(DbContextOptions<StudyFlowDbContext> options) : DbContext(options)
 {
+    public DbSet<AdminAuditLog> AdminAuditLogs => Set<AdminAuditLog>();
     public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
     public DbSet<StudySetPublication> Publications => Set<StudySetPublication>();
     public DbSet<SocialRelationship> Relationships => Set<SocialRelationship>();

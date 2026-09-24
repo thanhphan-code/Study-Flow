@@ -35,6 +35,9 @@ builder.Services.AddRateLimiter(options =>
     options.AddPolicy("auth-otp", context => RateLimitPartition.GetFixedWindowLimiter(
         context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
         _ => new FixedWindowRateLimiterOptions { PermitLimit = 30, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+    options.AddPolicy("admin", context => RateLimitPartition.GetFixedWindowLimiter(
+        context.User.FindFirst("sub")?.Value ?? context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 120, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
 });
 builder.Services.AddControllers().AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.AddProblemDetails();
@@ -71,6 +74,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
         }
     };
 });
+builder.Services.AddAuthorization();
 builder.Services.AddCors(options => options.AddDefaultPolicy(policy => policy.WithOrigins("http://localhost:5173").AllowAnyHeader().AllowAnyMethod().AllowCredentials()));
 
 var app = builder.Build();
@@ -80,12 +84,36 @@ app.UseCors();
 app.UseAuthentication();
 app.Use(async (context, next) =>
 {
-    if (!context.Request.Path.Equals("/api/auth/logout") && Guid.TryParse(context.User.FindFirst("sub")?.Value, out var userId) &&
-        await context.RequestServices.GetRequiredService<StudyFlowDbContext>().UserProfiles.AnyAsync(x => x.UserId == userId && x.IsSuspended, context.RequestAborted))
+    var publicAuthEndpoint = context.Request.Path.StartsWithSegments("/api/auth/login") ||
+        context.Request.Path.StartsWithSegments("/api/auth/register") ||
+        context.Request.Path.StartsWithSegments("/api/auth/verify-email") ||
+        context.Request.Path.StartsWithSegments("/api/auth/resend-email-otp") ||
+        context.Request.Path.StartsWithSegments("/api/auth/refresh") ||
+        context.Request.Path.StartsWithSegments("/api/auth/logout");
+    if (!publicAuthEndpoint && Guid.TryParse(context.User.FindFirst("sub")?.Value, out var authenticatedUserId))
     {
-        context.Response.StatusCode = 403;
-        await context.Response.WriteAsJsonAsync(new ApiError("SUSPENDED", "Tài khoản đã bị tạm ngưng."));
-        return;
+        var database = context.RequestServices.GetRequiredService<StudyFlowDbContext>();
+        var authenticatedUser = await database.Users.SingleOrDefaultAsync(x => x.Id == authenticatedUserId, context.RequestAborted);
+        var tokenVersion = context.User.FindFirst("session_version")?.Value;
+        var profileSuspended = await database.UserProfiles.AnyAsync(x => x.UserId == authenticatedUserId && x.IsSuspended, context.RequestAborted);
+        if (authenticatedUser?.IsSuspended == true || profileSuspended)
+        {
+            context.Response.StatusCode = 403;
+            await context.Response.WriteAsJsonAsync(new ApiError("SUSPENDED", "Tài khoản đã bị tạm ngưng."));
+            return;
+        }
+        if (authenticatedUser is null || tokenVersion != authenticatedUser.SessionVersion.ToString(System.Globalization.CultureInfo.InvariantCulture))
+        {
+            context.Response.StatusCode = 401;
+            await context.Response.WriteAsJsonAsync(new ApiError("SESSION_REVOKED", "Phiên đăng nhập đã bị thu hồi."));
+            return;
+        }
+        var now = context.RequestServices.GetRequiredService<TimeProvider>().GetUtcNow();
+        if (authenticatedUser.LastActiveAt is null || authenticatedUser.LastActiveAt < now.AddMinutes(-5))
+        {
+            authenticatedUser.MarkActive(now);
+            await database.SaveChangesAsync(context.RequestAborted);
+        }
     }
     await next();
 });

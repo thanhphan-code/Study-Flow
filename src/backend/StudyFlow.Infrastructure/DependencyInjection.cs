@@ -28,6 +28,7 @@ using StudyFlow.Application.Time;
 using StudyFlow.Infrastructure.Time;
 using StudyFlow.Application.Grounding;
 using StudyFlow.Infrastructure.Grounding;
+using StudyFlow.Application.Admin;
 
 namespace StudyFlow.Infrastructure;
 
@@ -42,8 +43,10 @@ public static class DependencyInjection
         services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
         services.AddScoped<TokenService>();
         services.AddOptions<EmailOptions>().Bind(configuration.GetSection(EmailOptions.SectionName));
+        services.AddOptions<AdminOptions>().Bind(configuration.GetSection(AdminOptions.SectionName));
         services.AddScoped<StudyFlow.Application.Auth.Interfaces.IEmailVerificationSender, SmtpEmailVerificationSender>();
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IAdminService, AdminService>();
         services.AddScoped<ISubjectService, SubjectService>();
         services.AddScoped<StudyFlow.Application.Social.ISocialService, SocialService>();
         services.AddScoped<IStudySetService, StudySetService>();
