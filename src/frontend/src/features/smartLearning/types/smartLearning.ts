@@ -1,0 +1,9 @@
+export type LearningAttemptType = 'Recall' | 'MultipleChoice' | 'TrueFalse' | 'Application' | 'SimilarQuestion'
+export type LearningResult = 'Correct' | 'Close' | 'Wrong'
+export type RecallDirection = 'Forward' | 'Reverse'
+export type LearningCardOutcome = 'InProgress' | 'Completed' | 'NeedsReview'
+export type SmartLearnItem = { flashcardId: string; frontText: string; backText: string; explanation: string | null; languageCode: string | null; readingText: string | null; romanization: string | null; exampleText: string | null; exampleTranslation: string | null; memoryTip: string | null; attemptType: LearningAttemptType; direction: RecallDirection; supportsReverse: boolean; options: { text: string }[]; priority: number; reason: string }
+export type SmartLearnSession = { studySessionId: string; studySetId: string; studySetTitle: string; startedAt: string; items: SmartLearnItem[] }
+export type SmartLearnSummary = { studySessionId: string; durationSeconds: number; totalAttempts: number; correct: number; needsWork: number; improvedCards: number; masteredToday: number; recommendedNextReview: string | null }
+export type LearningAttemptInput = { clientAttemptId: string; flashcardId: string; attemptType: LearningAttemptType; direction: RecallDirection; submittedAnswer: string; confidence: number; responseTimeMs: number; hintUsed: boolean }
+export type LearningAttempt = { id: string; clientAttemptId: string; flashcardId: string; attemptType: LearningAttemptType; direction: RecallDirection; result: LearningResult; confidence: number; responseTimeMs: number; hintUsed: boolean; createdAt: string; cardOutcome: LearningCardOutcome; nextAttemptType: LearningAttemptType | null; nextDirection: RecallDirection | null; retryAfterItems: number; srsCommitted: boolean; nextReviewAt: string | null }

@@ -1,0 +1,9 @@
+export type Quiz = { id: string; studySetId: string; title: string; questionCount: number; createdAt: string }
+export type ManualQuizOptionInput = { text: string; isCorrect: boolean }
+export type ManualQuizQuestionInput = { questionText: string; explanation: string | null; options: ManualQuizOptionInput[] }
+export type ManualQuizInput = { title: string; questions: ManualQuizQuestionInput[] }
+export type QuizOption = { id: string; text: string }
+export type QuizQuestion = { id: string; type: 'MultipleChoice' | 'TrueFalse'; questionText: string; orderIndex: number; options: QuizOption[] }
+export type QuizSession = { attemptId: string; quizId: string; title: string; startedAt: string; questions: QuizQuestion[] }
+export type QuizQuestionResult = { questionId: string; questionText: string; selectedOptionId: string | null; selectedAnswer: string | null; correctOptionId: string; correctAnswer: string; isCorrect: boolean; explanation: string | null }
+export type QuizResult = { attemptId: string; score: number; correctCount: number; wrongCount: number; completedAt: string; questions: QuizQuestionResult[] }

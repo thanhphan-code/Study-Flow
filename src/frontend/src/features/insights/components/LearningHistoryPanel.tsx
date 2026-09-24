@@ -1,0 +1,13 @@
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { insightKeys, insightsApi } from '@/features/insights/api/insightsApi'
+import { useLanguage } from '@/i18n/LanguageProvider'
+
+function duration(seconds:number) { const minutes=Math.floor(seconds/60); return minutes<60 ? `${minutes}m` : `${Math.floor(minutes/60)}h ${minutes%60}m` }
+export function LearningHistoryPanel() {
+  const [days,setDays]=useState(30); const { t,language }=useLanguage(); const vi=language==='vi'; const streak=useQuery({queryKey:insightKeys.streak,queryFn:insightsApi.streak}); const history=useQuery({queryKey:insightKeys.history(days),queryFn:()=>insightsApi.history(days)})
+  if(streak.isPending||history.isPending) return <section className="sf-card mt-6 rounded-3xl p-7 text-slate-500">{t('loading')}</section>
+  if(streak.isError||history.isError) return <section className="mt-6 rounded-3xl bg-red-50 p-7 text-red-700">Unable to load study history.</section>
+  const maximum=Math.max(1,...history.data.days.map(day=>day.studyTimeSeconds))
+  return <section className="sf-card mt-6 rounded-[1.7rem] p-6"><div className="flex flex-wrap items-start justify-between gap-5"><div><p className="text-sm font-semibold text-orange-600">{t('studyStreak')}</p><p className="metric-number mt-2 text-4xl font-bold text-[#111943]">♨ {streak.data.currentStreak} <span className="text-lg font-medium text-slate-500">{t('days')}</span></p><p className="mt-2 text-sm text-slate-500">{vi?'Dài nhất':'Longest'} {streak.data.longestStreak} {t('days')} · {streak.data.totalActiveDays} {t('activeDays')}</p></div><div className="flex rounded-xl bg-slate-100 p-1">{[30,90].map(value=><button key={value} onClick={()=>setDays(value)} className={`rounded-lg px-3 py-2 text-sm font-bold ${days===value?'bg-white text-[#111943] shadow-sm':'text-slate-500'}`}>{value} {t('days')}</button>)}</div></div><div className="mt-8 flex h-36 items-end gap-1" aria-label="Study history">{history.data.days.map(day=><div key={day.date} title={`${day.date}: ${duration(day.studyTimeSeconds)}`} className={`min-w-0 flex-1 rounded-t ${day.sessions?'bg-blue-500':'bg-slate-100'}`} style={{height:day.sessions?`${Math.max(8,day.studyTimeSeconds*100/maximum)}%`:'4px'}}/>)}</div><div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-500"><span><strong className="text-[#111943]">{history.data.activeDays}</strong> {t('activeDays')}</span><span><strong className="text-[#111943]">{history.data.totalSessions}</strong> {t('sessions')}</span><span><strong className="text-[#111943]">{duration(history.data.totalStudyTimeSeconds)}</strong> {t('studied')}</span><span className="ml-auto">UTC</span></div></section>
+}

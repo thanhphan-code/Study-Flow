@@ -1,0 +1,68 @@
+import { useEffect, useRef, useState } from 'react'
+import { useMutation } from '@tanstack/react-query'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { LanguageSwitch } from '@/components/AppShell'
+import { aiApi } from '@/features/ai/api/aiApi'
+import { PronunciationControls } from '@/features/flashcards/components/PronunciationControls'
+import { smartLearningApi } from '@/features/smartLearning/api/smartLearningApi'
+import type { LearningAttempt, LearningAttemptType, RecallDirection, SmartLearnItem, SmartLearnSession, SmartLearnSummary } from '@/features/smartLearning/types/smartLearning'
+import { useLanguage } from '@/i18n/LanguageProvider'
+import { ApiRequestError } from '@/api/httpClient'
+import { LearningSessionShell, SessionHeader, SessionProgress, SessionSummary } from '@/features/learning/components/LearningSessionShell'
+
+type QueueItem = { card: SmartLearnItem; attemptType: LearningAttemptType; direction: RecallDirection }
+
+export function SmartLearnPage() {
+  const { id = '' } = useParams(); const navigate = useNavigate(); const { language } = useLanguage(); const vi = language === 'vi'
+  const [count, setCount] = useState(18); const [session, setSession] = useState<SmartLearnSession | null>(null); const [queue, setQueue] = useState<QueueItem[]>([]); const [index, setIndex] = useState(0); const [response, setResponse] = useState(''); const [confidence, setConfidence] = useState(0); const [evaluation, setEvaluation] = useState<LearningAttempt | null>(null); const [hint, setHint] = useState(''); const [hintLevel, setHintLevel] = useState(0); const [hintUsed, setHintUsed] = useState(false); const [summary, setSummary] = useState<SmartLearnSummary | null>(null); const itemStarted = useRef(0)
+  const copy = vi ? {
+    title: 'Học ghi nhớ', intro: 'Học theo vòng nhận diện → chủ động nhớ lại → kiểm tra lại có khoảng cách.', duration: 'Khoảng 15 phút', items: 'thẻ', start: 'Bắt đầu', starting: 'Đang chuẩn bị…', exit: 'Thoát', typeAnswer: 'Nhập câu trả lời từ trí nhớ…', confidence: 'Bạn tự tin đến mức nào?', guessing: 'Đoán', certain: 'Chắc chắn', check: 'Kiểm tra', hint: 'Gợi ý', hintUnavailable: 'Gợi ý AI cần tài liệu đã xử lý gắn với bộ học.', exact: 'Chính xác', close: 'Gần đúng', wrong: 'Cần học thêm', answer: 'Đáp án chuẩn', explanation: 'Giải thích', retry: 'Thẻ sẽ quay lại sau vài thẻ khác.', next: 'Tiếp tục', completed: 'Hoàn thành phiên học', attempts: 'lượt trả lời', improved: 'Đã cải thiện', mastered: 'Thuộc hôm nay', nextReview: 'Lần ôn tiếp theo', back: 'Về bộ học', misconception: 'Có thể đang hiểu sai — mức tự tin cao nhưng câu trả lời chưa đúng.', error: 'Không thể xử lý phiên học.', recognition: 'NHẬN DIỆN', recall: 'CHỦ ĐỘNG NHỚ', reverse: 'NHỚ ĐẢO CHIỀU', closeHelp: 'Ý chính gần đúng nhưng còn thiếu dấu hoặc có lỗi chính tả. Hãy nhập chính xác ở lần sau.', learned: 'Đã hoàn tất vòng học', needsReview: 'Đưa vào phiên ôn gần nhất', yourAnswer: 'Câu trả lời của bạn'
+  } : {
+    title: 'Memory learning', intro: 'Learn through recognition → active recall → delayed recall.', duration: 'About 15 minutes', items: 'cards', start: 'Start', starting: 'Preparing…', exit: 'Exit', typeAnswer: 'Type your answer from memory…', confidence: 'How confident are you?', guessing: 'Guessing', certain: 'Certain', check: 'Check answer', hint: 'Hint', hintUnavailable: 'AI hints require a processed document attached to this study set.', exact: 'Exact', close: 'Almost correct', wrong: 'Needs work', answer: 'Expected answer', explanation: 'Explanation', retry: 'This card will return after several other cards.', next: 'Continue', completed: 'Session complete', attempts: 'attempts', improved: 'Improved', mastered: 'Mastered today', nextReview: 'Recommended next review', back: 'Back to study set', misconception: 'Potential misconception — confidence was high but the answer was not exact.', error: 'Could not process this learning session.', recognition: 'RECOGNITION', recall: 'ACTIVE RECALL', reverse: 'REVERSE RECALL', closeHelp: 'The meaning is close, but accents or spelling need correction. Enter it exactly next time.', learned: 'Learning round completed', needsReview: 'Scheduled for near-term review', yourAnswer: 'Your answer'
+  }
+
+  function loadSession(value: SmartLearnSession) { setSession(value); setQueue(value.items.map((card) => ({ card, attemptType: card.attemptType, direction: card.direction }))); setIndex(0); itemStarted.current = Date.now() }
+  useEffect(() => { let active = true; smartLearningApi.active(id).then((value) => { if (active) loadSession(value) }).catch((reason) => { if (!(reason instanceof ApiRequestError && reason.status === 404)) console.error(reason) }); return () => { active = false } }, [id])
+  const start = useMutation({ mutationFn: () => smartLearningApi.start(id, count), onSuccess: loadSession })
+  const complete = useMutation({ mutationFn: (sessionId: string) => smartLearningApi.complete(sessionId), onSuccess: setSummary })
+  const record = useMutation({
+    mutationFn: ({ item }: { item: QueueItem }) => smartLearningApi.record(session!.studySessionId, { clientAttemptId: crypto.randomUUID(), flashcardId: item.card.flashcardId, attemptType: item.attemptType, direction: item.direction, submittedAnswer: response, confidence, responseTimeMs: Math.min(3_600_000, Date.now() - itemStarted.current), hintUsed }),
+    onSuccess: setEvaluation,
+  })
+  const getHint = useMutation({ mutationFn: () => aiApi.hint(queue[index].card.flashcardId, hintLevel + 1), onSuccess: (value) => { setHint(value.text); setHintLevel((level) => Math.min(2, level + 1)); setHintUsed(true) } })
+  function resetItem() { setResponse(''); setConfidence(0); setEvaluation(null); setHint(''); setHintLevel(0); setHintUsed(false); itemStarted.current = Date.now() }
+  async function exit() { if (session && !summary) await smartLearningApi.complete(session.studySessionId); navigate(`/study-sets/${id}`) }
+  async function advance() {
+    if (!evaluation || !session) return
+    const nextQueue = [...queue]
+    if (evaluation.cardOutcome === 'InProgress' && evaluation.nextAttemptType && evaluation.nextDirection) {
+      const nextItem: QueueItem = { card: queue[index].card, attemptType: evaluation.nextAttemptType, direction: evaluation.nextDirection }
+      nextQueue.splice(Math.min(index + 1 + evaluation.retryAfterItems, nextQueue.length), 0, nextItem)
+      setQueue(nextQueue)
+    }
+    const nextIndex = index + 1; resetItem()
+    if (nextIndex >= nextQueue.length) await complete.mutateAsync(session.studySessionId)
+    else setIndex(nextIndex)
+  }
+
+  if (summary) return <Summary value={summary} studySetId={id} copy={copy} />
+  if (!session) return <main className="grid min-h-screen place-items-center px-5"><div className="absolute right-5 top-5"><LanguageSwitch /></div><section className="sf-card w-full max-w-lg rounded-[2rem] p-8 text-center"><span className="text-5xl">◎</span><h1 className="mt-5 text-4xl font-bold text-[#111943]">{copy.title}</h1><p className="mx-auto mt-3 max-w-sm leading-7 text-slate-500">{copy.intro}</p><div className="mx-auto mt-7 flex max-w-xs items-center justify-between rounded-2xl bg-blue-50 p-4"><span className="text-sm font-semibold text-blue-800">{copy.duration}</span><label className="text-sm text-blue-800"><input type="number" min="5" max="50" value={count} onChange={(event) => setCount(Number(event.target.value))} className="mr-2 w-16 rounded-lg bg-white p-2 text-center font-bold" />{copy.items}</label></div><button disabled={start.isPending} onClick={() => start.mutate()} className="sf-primary mt-7 w-full rounded-xl px-6 py-3.5 font-bold text-white">{start.isPending ? copy.starting : copy.start}</button>{start.isError && <p className="mt-4 text-sm text-red-600">{start.error.message}</p>}<Link to={`/study-sets/${id}`} className="mt-5 inline-block text-sm text-slate-500">{copy.back}</Link></section></main>
+
+  const item = queue[index]; const card = item.card; const isChoice = item.attemptType === 'MultipleChoice'; const isReverse = item.direction === 'Reverse'; const prompt = isReverse ? card.backText : card.frontText; const expectedAnswer = isReverse ? card.frontText : card.backText
+  const phaseLabel = isChoice ? copy.recognition : isReverse ? copy.reverse : copy.recall
+  const evaluationStyle = evaluation?.result === 'Correct' ? 'bg-emerald-50 text-emerald-800' : evaluation?.result === 'Close' ? 'bg-amber-50 text-amber-900' : 'bg-red-50 text-red-800'
+  const evaluationLabel = evaluation?.result === 'Correct' ? `✓ ${copy.exact}` : evaluation?.result === 'Close' ? `≈ ${copy.close}` : `✕ ${copy.wrong}`
+
+  return <LearningSessionShell><SessionHeader exitLabel={copy.exit} onExit={()=>void exit()} current={index+1} total={queue.length}/><div className="mt-4"><SessionProgress current={index+1} total={queue.length}/></div><div className="mt-6"><p className="text-sm font-bold text-blue-600">{copy.title}</p><h1 className="mt-1 text-lg font-bold text-[#111943]">{session.studySetTitle}</h1></div>
+    <section className="sf-card mt-5 rounded-[2rem] p-6 sm:p-9"><div className="flex justify-between gap-3"><span className="text-xs font-bold text-indigo-600">{phaseLabel}</span><span className="text-xs text-slate-400">{card.reason}</span></div><h2 className="mt-5 whitespace-pre-wrap text-2xl font-bold leading-9 text-[#111943]">{prompt}</h2>{card.languageCode && !isReverse && <div className="mt-4 flex justify-start"><PronunciationControls text={card.readingText || card.frontText} languageCode={card.languageCode} /></div>}
+      {!evaluation && <>{isChoice ? <div className="mt-7 space-y-3">{card.options.map((option, optionIndex) => <button key={option.text} onClick={() => setResponse(option.text)} className={`flex w-full items-center gap-3 rounded-xl border p-4 text-left ${response === option.text ? 'border-blue-500 bg-blue-50' : 'border-slate-200'}`}><span className="font-bold">{optionIndex + 1}</span>{option.text}</button>)}</div> : <textarea autoFocus value={response} onChange={(event) => setResponse(event.target.value)} rows={4} placeholder={copy.typeAnswer} className="mt-7 w-full rounded-xl border border-slate-300 p-4 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100" />}
+        {hint && <div className="mt-4 rounded-xl bg-amber-50 p-4 text-sm leading-6 text-amber-900"><strong>{copy.hint} {hintLevel}:</strong> {hint}</div>}{getHint.isError && <p className="mt-3 text-sm text-amber-700">{copy.hintUnavailable}</p>}
+        <div className="mt-6"><p className="text-sm font-semibold text-slate-700">{copy.confidence}</p><div className="mt-3 grid grid-cols-5 gap-2">{[1,2,3,4,5].map((value) => <button key={value} onClick={() => setConfidence(value)} className={`rounded-xl py-3 font-bold ${confidence === value ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'}`}>{value}</button>)}</div><div className="mt-1 flex justify-between text-xs text-slate-400"><span>{copy.guessing}</span><span>{copy.certain}</span></div></div>
+        <div className="mt-6 flex gap-3">{!isReverse && <button disabled={getHint.isPending || hintLevel >= 2} onClick={() => getHint.mutate()} className="rounded-xl border border-amber-200 px-4 py-3 font-semibold text-amber-700 disabled:opacity-40">{getHint.isPending ? '…' : `💡 ${copy.hint} ${hintLevel + 1}`}</button>}<button disabled={!response.trim() || !confidence || record.isPending} onClick={() => record.mutate({ item })} className="sf-primary flex-1 rounded-xl px-5 py-3 font-bold text-white disabled:opacity-40">{copy.check}</button></div>{record.isError && <p className="mt-3 text-sm text-red-600">{copy.error}</p>}</>}
+      {evaluation && <div className="mt-7"><div className={`rounded-xl p-4 ${evaluationStyle}`}><p className="font-bold">{evaluationLabel}</p><p className="mt-3 text-xs font-bold uppercase opacity-60">{copy.yourAnswer}</p><p className="mt-1 whitespace-pre-wrap">{response}</p><p className="mt-3 text-xs font-bold uppercase opacity-60">{copy.answer}</p><p className="mt-1 whitespace-pre-wrap text-lg font-semibold">{expectedAnswer}</p>{evaluation.result === 'Close' && <p className="mt-3 text-sm">{copy.closeHelp}</p>}</div>{card.explanation && <div className="mt-4 rounded-xl bg-slate-50 p-4"><p className="text-xs font-bold text-slate-400">{copy.explanation}</p><p className="mt-2 leading-7 text-slate-700">{card.explanation}</p></div>}{evaluation.result !== 'Correct' && confidence >= 4 && <p className="mt-4 rounded-xl bg-amber-50 p-3 text-sm font-semibold text-amber-900">{copy.misconception}</p>}<p className="mt-4 text-center text-sm font-semibold text-slate-500">{evaluation.cardOutcome === 'Completed' ? copy.learned : evaluation.cardOutcome === 'NeedsReview' ? copy.needsReview : copy.retry}</p><button disabled={complete.isPending} onClick={advance} className="sf-primary mt-4 w-full rounded-xl py-3 font-bold text-white">{copy.next}</button></div>}
+    </section></LearningSessionShell>
+}
+
+function Summary({ value, studySetId, copy }: { value: SmartLearnSummary; studySetId: string; copy: Record<string,string> }) {
+  const minutes = Math.max(1, Math.round(value.durationSeconds / 60)); return <SessionSummary eyebrow={copy.completed} title={`${minutes} min · ${value.totalAttempts} ${copy.attempts}`} description={value.recommendedNextReview?`${copy.nextReview}: ${new Date(value.recommendedNextReview).toLocaleString()}`:undefined} metrics={[{label:copy.exact,value:value.correct},{label:copy.wrong,value:value.needsWork},{label:copy.improved,value:value.improvedCards},{label:copy.mastered,value:value.masteredToday}]} primaryAction={<Link to={`/study-sets/${studySetId}`} className="sf-primary rounded-xl px-5 py-3 text-center font-bold text-white">{copy.back}</Link>}/>
+}

@@ -1,0 +1,16 @@
+using StudyFlow.Domain.Enums;
+namespace StudyFlow.Application.AI.DTOs;
+public sealed record AIGenerationContext(string Material,string Difficulty,bool DocumentOnly,bool RequireSources=false);
+public sealed record GeneratedFlashcardDto(string FrontText,string BackText,string? Explanation,string? LanguageCode=null,string? ReadingText=null,string? Romanization=null,string? ExampleText=null,string? ExampleTranslation=null,string? MemoryTip=null,string? AcceptedAnswers=null,IReadOnlyList<string>? SourceIds=null);
+public sealed record FlashcardGenerationResult(IReadOnlyList<GeneratedFlashcardDto> Flashcards);
+public sealed record GeneratedOptionDto(string Text,bool IsCorrect);
+public sealed record GeneratedQuestionDto(string Type,string QuestionText,string? Explanation,IReadOnlyList<GeneratedOptionDto> Options,IReadOnlyList<string>? SourceIds=null);
+public sealed record QuizGenerationResult(IReadOnlyList<GeneratedQuestionDto> Questions);
+public sealed record GenerateStudyMaterialRequest(Guid? DocumentId,string? PastedText,bool GenerateFlashcards=true,bool GenerateQuiz=true,int FlashcardCount=20,int QuizQuestionCount=10,string Difficulty="Mixed",bool DocumentOnly=true);
+public sealed record AIDraftDto(IReadOnlyList<GeneratedFlashcardDto> Flashcards,IReadOnlyList<GeneratedQuestionDto> Questions);
+public sealed record AIJobDto(Guid Id,Guid StudySetId,Guid? DocumentId,AIJobType JobType,AIJobStatus Status,string? ErrorMessage,AIDraftDto? Draft,DateTimeOffset CreatedAt,DateTimeOffset? CompletedAt,DateTimeOffset? SavedAt);
+public sealed record SaveAIDraftRequest(IReadOnlyList<GeneratedFlashcardDto> Flashcards,IReadOnlyList<GeneratedQuestionDto> Questions,string QuizTitle="AI Quiz");
+public sealed record SavedAIDraftDto(int FlashcardsCreated,Guid? QuizId,int QuestionsCreated);
+public sealed record GroundedTextProviderResult(string Answer,IReadOnlyList<string>? SourceIds);
+public sealed record AITextResultDto(Guid JobId,string Text,IReadOnlyList<StudyFlow.Application.Grounding.SourceReferenceDto> Sources);
+public sealed record AIHintRequest(int Level=1);
