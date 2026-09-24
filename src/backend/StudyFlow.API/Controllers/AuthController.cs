@@ -80,7 +80,12 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
     {
         if (Request.Cookies.TryGetValue("studyflow_refresh", out var token) && !string.IsNullOrWhiteSpace(token))
             await authService.LogoutAsync(token, cancellationToken);
-        Response.Cookies.Delete("studyflow_refresh", new CookieOptions { Path = "/api/auth" });
+        Response.Cookies.Delete("studyflow_refresh", new CookieOptions
+        {
+            Secure = true,
+            SameSite = SameSiteMode.None,
+            Path = "/api/auth"
+        });
         return NoContent();
     }
 
@@ -95,7 +100,7 @@ public sealed class AuthController(IAuthService authService) : ControllerBase
         {
             HttpOnly = true,
             Secure = true,
-            SameSite = SameSiteMode.Strict,
+            SameSite = SameSiteMode.None,
             Expires = DateTimeOffset.UtcNow.AddDays(30),
             Path = "/api/auth"
         });

@@ -1,0 +1,16 @@
+.git
+.gitignore
+.vs
+.vscode
+**/bin
+**/obj
+**/node_modules
+**/dist
+**/.env
+**/.env.*
+!**/.env.example
+tests
+docs
+src/frontend
+*.md
+docker-compose.yml
