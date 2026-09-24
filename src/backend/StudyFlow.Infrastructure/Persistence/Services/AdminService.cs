@@ -65,7 +65,7 @@ internal sealed class AdminService(StudyFlowDbContext db, TimeProvider clock, IO
             .Select(x => new { User = x, Username = db.UserProfiles.Where(p => p.UserId == x.Id).Select(p => p.Username).FirstOrDefault() })
             .SingleOrDefaultAsync(cancellationToken);
         if (row is null) return Result<AdminUserDetailsDto>.Failure("USER_NOT_FOUND", "Không tìm thấy người dùng.", ErrorType.NotFound);
-        var audit = await AuditQuery().Where(x => x.Log.TargetUserId == userId).Take(20).ToListAsync(cancellationToken);
+        var audit = await AuditQuery(userId).Take(20).ToListAsync(cancellationToken);
         var details = new AdminUserDetailsDto(
             ToListItem(row.User, row.Username),
             await db.Subjects.CountAsync(x => x.UserId == userId, cancellationToken),
@@ -124,12 +124,16 @@ internal sealed class AdminService(StudyFlowDbContext db, TimeProvider clock, IO
         return new(rows.Select(ToAuditItem).ToList(), page, pageSize, total, (int)Math.Ceiling(total / (double)pageSize));
     }
 
-    private IQueryable<AuditProjection> AuditQuery() =>
-        from log in db.AdminAuditLogs.AsNoTracking()
+    private IQueryable<AuditProjection> AuditQuery(Guid? targetUserId = null)
+    {
+        var logs = db.AdminAuditLogs.AsNoTracking().AsQueryable();
+        if (targetUserId.HasValue) logs = logs.Where(x => x.TargetUserId == targetUserId.Value);
+        return from log in logs
         join actor in db.Users.AsNoTracking() on log.ActorUserId equals actor.Id
         join target in db.Users.AsNoTracking() on log.TargetUserId equals target.Id
         orderby log.CreatedAt descending
         select new AuditProjection(log, actor.DisplayName, target.DisplayName);
+    }
 
     private void AddAudit(Guid actor, Guid target, string action, string reason, object metadata) =>
         db.AdminAuditLogs.Add(AdminAuditLog.Create(actor, target, action, reason, JsonSerializer.Serialize(metadata)));

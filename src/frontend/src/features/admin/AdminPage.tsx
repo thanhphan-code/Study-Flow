@@ -60,6 +60,7 @@ export function AdminPage() {
   const [page, setPage] = useState(1);
   const [auditPage, setAuditPage] = useState(1);
   const [selected, setSelected] = useState<UserDetails | null>(null);
+  const [openingUserId, setOpeningUserId] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -100,6 +101,17 @@ export function AdminPage() {
 
   const refreshSelected = async (id: string) =>
     setSelected(await adminApi.user(id));
+  const openUser = async (id: string) => {
+    setOpeningUserId(id);
+    setError("");
+    try {
+      await refreshSelected(id);
+    } catch (reason: unknown) {
+      setError(errorMessage(reason));
+    } finally {
+      setOpeningUserId("");
+    }
+  };
   const refresh = async () => {
     await Promise.all([loadOverview(), loadUsers(), loadAudit()]);
     if (selected) await refreshSelected(selected.user.id);
@@ -297,7 +309,7 @@ export function AdminPage() {
                       <td>
                         <button
                           className="admin-person"
-                          onClick={() => void refreshSelected(user.id)}
+                          onClick={() => void openUser(user.id)}
                         >
                           <span>
                             {user.displayName.slice(0, 2).toUpperCase()}
@@ -331,9 +343,10 @@ export function AdminPage() {
                       <td>
                         <button
                           className="admin-open"
-                          onClick={() => void refreshSelected(user.id)}
+                          disabled={openingUserId === user.id}
+                          onClick={() => void openUser(user.id)}
                         >
-                          Quản lý
+                          {openingUserId === user.id ? "Đang mở…" : "Quản lý"}
                         </button>
                       </td>
                     </tr>
@@ -356,7 +369,7 @@ export function AdminPage() {
                 <article key={user.id}>
                   <button
                     className="admin-mobile-person"
-                    onClick={() => void refreshSelected(user.id)}
+                    onClick={() => void openUser(user.id)}
                     aria-label={`Quản lý ${user.displayName}`}
                   >
                     <span>{user.displayName.slice(0, 2).toUpperCase()}</span>
@@ -374,9 +387,12 @@ export function AdminPage() {
                   <p>{date(user.lastActiveAt)}</p>
                   <button
                     className="admin-mobile-manage"
-                    onClick={() => void refreshSelected(user.id)}
+                    disabled={openingUserId === user.id}
+                    onClick={() => void openUser(user.id)}
                   >
-                    Quản lý tài khoản
+                    {openingUserId === user.id
+                      ? "Đang mở…"
+                      : "Quản lý tài khoản"}
                   </button>
                 </article>
               ))}
