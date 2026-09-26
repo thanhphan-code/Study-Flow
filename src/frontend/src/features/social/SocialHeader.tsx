@@ -7,6 +7,7 @@ import {
   LogLevel,
 } from "@microsoft/signalr";
 import { Bell, MessageCircle, CircleUserRound } from "lucide-react";
+import { apiBaseUrl } from "@/api/httpClient";
 import { useAuthStore } from "@/features/auth/store/authStore";
 import { socialGet, type Page, type Notice } from "./socialApi";
 import "./social.css";
@@ -28,15 +29,12 @@ export function SocialHeader() {
     let refreshTimer: ReturnType<typeof setTimeout> | undefined;
     let starting = false;
     const hub = new HubConnectionBuilder()
-      .withUrl(
-        `${(import.meta.env.VITE_API_BASE_URL ?? "/api").replace(/\/$/, "")}/social-hub`,
-        {
+      .withUrl(`${apiBaseUrl}/social-hub`, {
           accessTokenFactory: async () => {
             await socialGet("/notifications");
             return useAuthStore.getState().accessToken ?? "";
           },
-        },
-      )
+        })
       .withAutomaticReconnect()
       .configureLogging(LogLevel.Warning)
       .build();

@@ -5,7 +5,7 @@ export function FlashcardImage({ imageUrl, alt, className = '' }: { imageUrl: st
   const token = useAuthStore(state => state.accessToken); const [source, setSource] = useState('')
   useEffect(() => {
     let objectUrl = ''; const controller = new AbortController()
-    fetch(imageUrl, { headers: token ? { Authorization: `Bearer ${token}` } : {}, signal: controller.signal }).then(response => { if (!response.ok) throw new Error('Image could not be loaded.'); return response.blob() }).then(blob => { objectUrl = URL.createObjectURL(blob); setSource(objectUrl) }).catch(() => undefined)
+    fetch(imageUrl, { credentials: 'include', headers: token ? { Authorization: `Bearer ${token}` } : {}, signal: controller.signal }).then(response => { if (!response.ok) throw new Error('Image could not be loaded.'); return response.blob() }).then(blob => { objectUrl = URL.createObjectURL(blob); setSource(objectUrl) }).catch(() => undefined)
     return () => { controller.abort(); if (objectUrl) URL.revokeObjectURL(objectUrl) }
   }, [imageUrl, token])
   if (!source) return <div className={`animate-pulse bg-slate-100 ${className}`} aria-label={alt} />

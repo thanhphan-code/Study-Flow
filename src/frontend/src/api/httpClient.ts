@@ -1,6 +1,7 @@
 import { useAuthStore } from "@/features/auth/store/authStore";
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "/api";
+const configuredApiUrl = import.meta.env.VITE_API_URL?.trim().replace(/\/+$/, "");
+export const apiBaseUrl = configuredApiUrl ? `${configuredApiUrl}/api` : "/api";
 let refreshInFlight: Promise<boolean> | null = null;
 
 function refreshSession(): Promise<boolean> {

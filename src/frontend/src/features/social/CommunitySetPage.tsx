@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { PublicPractice } from "./PublicPractice";
 import { FlashcardImage } from "@/features/flashcards/components/FlashcardImage";
+import { apiBaseUrl } from "@/api/httpClient";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
@@ -468,7 +469,7 @@ export function CommunitySetPage() {
                   <h3>{card.frontText}</h3>
                   {card.hasImage && (
                     <FlashcardImage
-                      imageUrl={`${import.meta.env.VITE_API_BASE_URL ?? "/api"}/social/sets/${id}/cards/${card.id}/image`}
+                      imageUrl={`${apiBaseUrl}/social/sets/${id}/cards/${card.id}/image`}
                       alt="Ảnh minh họa thẻ"
                       className="social-card-image"
                     />

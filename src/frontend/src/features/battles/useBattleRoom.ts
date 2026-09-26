@@ -6,7 +6,7 @@ import {
   LogLevel,
 } from "@microsoft/signalr";
 import { useAuthStore } from "@/features/auth/store/authStore";
-import { apiRequest } from "@/api/httpClient";
+import { apiBaseUrl, apiRequest } from "@/api/httpClient";
 import { battleApi } from "./battleApi";
 
 export function useBattleRoom(id: string) {
@@ -30,12 +30,8 @@ export function useBattleRoom(id: string) {
     let retry: ReturnType<typeof setTimeout> | undefined;
     let refreshTimer: ReturnType<typeof setTimeout> | undefined;
     let starting = false;
-    const base = (import.meta.env.VITE_API_BASE_URL ?? "/api").replace(
-      /\/$/,
-      "",
-    );
     const hub = new HubConnectionBuilder()
-      .withUrl(`${base}/battle-hub`, {
+      .withUrl(`${apiBaseUrl}/battle-hub`, {
         accessTokenFactory: async () => {
           // Use the shared HTTP refresh flow before negotiating a fresh realtime connection.
           await apiRequest(`/battles/${id}`);
